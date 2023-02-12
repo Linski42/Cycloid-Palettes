@@ -8,9 +8,11 @@
   let Sp = 1;
   let L = 0.6;
   let Lp = 0.6; 
-  let cycloidRadius = 0.14;
+  let cycloidRadius = 0.2;
+  let hueShift = true;
+  let isCycloid = false;
   let nPoints = 7;
-  let scale = 0.3;
+  let scale = 0.1;
   let polina = new Poline({
     anchorColors: [
       [H, S, L],
@@ -21,26 +23,26 @@
    positionFunction: 
     positionFunctions.linearPosition,
   });
-  function cycloid(y: number){//returns cycloid x value given y
+  function cycloid(y: number, y_off: number, x_off: number){//returns cycloid x value given y
     const h = cycloidRadius;
-    let v: number = h*Math.acos( (1 - ((y*scale)/h)) ) - Math.sqrt( 2*h*(y*scale)-(y*scale)^2 )
+    const s = scale;
+    let v : number = h*Math.acos( (1 - (((y)*s)/h)) ) - Math.sqrt( 2*h*((y)*s)-((y)*s)^2 )
     if(isNaN(v)){
-      v = -( h*Math.acos( (1 - ((scale*y)/h)) ) - Math.sqrt( 2*h*(scale*y)-(y*scale)^2 ) ) + 2*Math.PI*h
+      v = -( ( h*Math.acos( (1 - ((s*(y))/h)) ) - Math.sqrt( 2*h*(s*(y))-((y)*s)^2 ) ) + 2*Math.PI*h)
     }
     return v;
   }
   function calculateCycloidFromPoint(){
     let origin = polina.anchorPoints[0];
-    while(polina.anchorPoints.length > 2){
+    while(polina.anchorPoints.length > 1){
       polina.removeAnchorPoint({index: polina.anchorPoints.length-1})
     }
-    for(let i = 0; i<cycloidRadius*2*Math.PI; i=i + 0.2){
+    for(let i = 0; i<cycloidRadius*2*Math.PI; i = i + (cycloidRadius*Math.PI)/4){//0.2 is weird
     polina.addAnchorPoint({
-      xyz: [origin.y+cycloid(i),origin.y+i, 0.5],
+      xyz: [cycloid(i, origin.y, origin.x),origin.y+i, 0.5],
       insertAtIndex: polina.anchorPoints.length-1
       })
   }
-  updateColorPoints()
 }
   function updateNPoints(){
     polina.numPoints = nPoints-2
@@ -53,12 +55,19 @@
     point: polina.anchorPoints[0],
     color: [H, S, L]
     });
-    polina.updateAnchorPoint({
-    point: polina.anchorPoints[1],
-    color: [Hp, Sp, Lp]
-    });
+    
+    if(isCycloid){
+        calculateCycloidFromPoint()
+    }else{
+      polina.updateAnchorPoint({
+      point: polina.anchorPoints[1],
+      color: [Hp, Sp, Lp]
+      });
+    }
+    
     polina.numPoints = nPoints - 2
     polina = polina
+
   }
 
   //Color wheel/bar 
@@ -84,6 +93,9 @@
     for(let i = 0; i < colors.length; i++){
       grd.addColorStop(i*(1/colors.length), colors[i]);
       grd.addColorStop(i*(1/colors.length)+(1/(colors.length)), colors[i]);
+    }
+    if(hueShift){
+      polina.shiftHue(1);
     }
 
     ctx.fillStyle = grd;
@@ -111,13 +123,14 @@
       	Number of Points: <input type=range bind:value={nPoints} on:change={updateNPoints} min = 3 max = 50> {nPoints}
     </div>
     <div>
-    Cycloid: <input type=button on:click={calculateCycloidFromPoint}>
+    Cycloid: <input type=checkbox bind:value={isCycloid} on:change={updateColorPoints}>
+    Hue Shift: <input type=checkbox checked bind:value={hueShift} on:change={updateColorPoints}>
     </div>
     <div>
-    Radius: {cycloidRadius}<input type=range bind:value={cycloidRadius} on:change={calculateCycloidFromPoint} min = -1 max = 1 step = 0.001>
+    Radius: {cycloidRadius.toFixed(2).toString()[0] == "-" ? cycloidRadius.toFixed(2) : "+" + cycloidRadius.toFixed(2)}<input type=range bind:value={cycloidRadius} on:change={updateColorPoints} min = 0.0001 max = 0.3 step = 0.0001>
     </div>
     <div>
-    Scale: {scale}<input type=range bind:value={scale} on:change={calculateCycloidFromPoint} min = -1 max = 1 step = 0.001>
+    Scale: {scale.toFixed(2).toString()[0] == "-" ? scale.toFixed(2) : "+" + scale.toFixed(2)}<input type=range bind:value={scale} on:change={updateColorPoints} min = 0 max = 1 step = 0.001>
     </div>
   <div class = "card">
     <label>
@@ -130,17 +143,16 @@
     <label>
       <div></div>
       [HSL Two]
-    	H: ({Hp})<input type=range bind:value={Hp} on:input={updateColorPoints} min = 0 max = 360>
+    	H: ({Hp.toFixed(0)})<input type=range bind:value={Hp} on:input={updateColorPoints} min = 0 max = 360>
     	S: <input type=range bind:value={Sp} on:input={updateColorPoints} min = 0 max = 1 step = 0.01>
     	L: <input type=range bind:value={Lp} on:input={updateColorPoints} min = 0 max = 1 step = 0.01>
     </label>
-    <div>
-      <!-- <p>Color values are: {colors}</p>
-      <p>colors hex is: { ii }</p> -->
-
-    </div>
-  </div>
-
+    {#each polina.anchorPoints as point}
+      <div>
+        x: {point.x.toFixed(3)}
+        y: {point.y.toFixed(3)}
+      </div>
+    {/each}
 
 </main>
 
