@@ -2,13 +2,13 @@
   import {hslToPoint, Poline, positionFunctions} from "poline";
   import { interpolate } from 'culori';
   import { formatHex } from 'culori';
-  let H = 120;
+  let H = 180;
   let Hp = 0;
   let S = 0.7;
   let Sp = 1;
   let L = 0.6;
   let Lp = 0.6; 
-  let cycloidRadius = 0.2;
+  let cycloidRadius = 0.07;
   let hueShift = true;
   let isCycloid = false;
   let nPoints = 7;
@@ -26,9 +26,9 @@
   function cycloid(y: number, y_off: number, x_off: number){//returns cycloid x value given y
     const h = cycloidRadius;
     const s = scale;
-    let v : number = h*Math.acos( (1 - (((y)*s)/h)) ) - Math.sqrt( 2*h*((y)*s)-((y)*s)^2 )
+    let v: number = h*Math.acos(1 - ((s*(y))/h) ) - Math.sqrt( 2*h*s*y - Math.pow((y*s), 2) ) + h*x_off
     if(isNaN(v)){
-      v = -( ( h*Math.acos( (1 - ((s*(y))/h)) ) - Math.sqrt( 2*h*(s*(y))-((y)*s)^2 ) ) + 2*Math.PI*h)
+      v = -( h*Math.acos(1 - ((s*(y))/h) ) - Math.sqrt( 2*h*s*y - Math.pow((y*s), 2) ) ) + 2*Math.PI*h*x_off + h*x_off
     }
     return v;
   }
@@ -37,9 +37,9 @@
     while(polina.anchorPoints.length > 1){
       polina.removeAnchorPoint({index: polina.anchorPoints.length-1})
     }
-    for(let i = 0; i<cycloidRadius*2*Math.PI; i = i + (cycloidRadius*Math.PI)/4){//0.2 is weird
+    for(let i = origin.x; i<cycloidRadius*2*Math.PI+cycloidRadius*origin.x; i = i + (cycloidRadius*Math.PI/4)){//0.2 is weird
     polina.addAnchorPoint({
-      xyz: [cycloid(i, origin.y, origin.x),origin.y+i, 0.5],
+      xyz: [origin.x+ cycloid(i, origin.y, origin.x),origin.y+i, 0.5],
       insertAtIndex: polina.anchorPoints.length-1
       })
   }
@@ -118,7 +118,7 @@
   <div>
 
   </div>
-  <h1>Colors</h1>
+  <h1>Cycloid Color Palette</h1>
     <div>
       	Number of Points: <input type=range bind:value={nPoints} on:change={updateNPoints} min = 3 max = 50> {nPoints}
     </div>
@@ -147,13 +147,15 @@
     	S: <input type=range bind:value={Sp} on:input={updateColorPoints} min = 0 max = 1 step = 0.01>
     	L: <input type=range bind:value={Lp} on:input={updateColorPoints} min = 0 max = 1 step = 0.01>
     </label>
-    {#each polina.anchorPoints as point}
+    <!-- {#each polina.anchorPoints as point}
       <div>
         x: {point.x.toFixed(3)}
         y: {point.y.toFixed(3)}
       </div>
-    {/each}
-
+    {/each} -->
+<p>
+  Check the box labelled "Cycloid" to switch to a cycloidal color palette.
+</p>
 </main>
 
 <style>
